@@ -13,10 +13,18 @@
 
 //--- plot Dist_MA
 #property indicator_label1  "Dist_MA"
-#property indicator_type1   DRAW_LINE
+#property indicator_type1   DRAW_COLOR_LINE
 #property indicator_color1  clrLimeGreen,clrGold,clrOrangeRed
 #property indicator_style1  STYLE_SOLID
-#property indicator_width1  1
+#property indicator_width1  2
+//--- set the maximum and minimum values ​​for the indicator window
+#property indicator_minimum  -55
+#property indicator_maximum  55
+//--- plot Levels
+#property indicator_level1 30
+#property indicator_level2 -30
+#property indicator_level3 50
+#property indicator_level4 -50
 //--- input parameters
 input int      inpLen=21; // Length of HV and MA
 //--- indicator buffers
@@ -27,10 +35,21 @@ double         Dist_MABuffer[],ColorBuffer[];
 //+------------------------------------------------------------------+
 int OnInit()
   {
+//--- set descriptions of horizontal levels
+   IndicatorSetString(INDICATOR_LEVELTEXT,0,"Safe Line");
+   IndicatorSetString(INDICATOR_LEVELTEXT,1,"Safe Line");
+   IndicatorSetString(INDICATOR_LEVELTEXT,2,"No Go");
+   IndicatorSetString(INDICATOR_LEVELTEXT,3,"No Go");
+   
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR,0,clrYellow);
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR,1,clrYellow);
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR,2,clrRed);
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR,3,clrRed);
+   
 //--- indicator buffers mapping
    SetIndexBuffer(0,Dist_MABuffer,INDICATOR_DATA);
-   SetIndexBuffer(2,HVBuffer,INDICATOR_CALCULATIONS);
    SetIndexBuffer(1,ColorBuffer,INDICATOR_COLOR_INDEX);
+   SetIndexBuffer(2,HVBuffer,INDICATOR_CALCULATIONS);
    
 //---
    return(INIT_SUCCEEDED);
@@ -75,7 +94,7 @@ int OnCalculate(const int rates_total,
       double Price_MA = SimpleMA(i,inpLen,close);
       double distPriceFromMA = (close[i]-Price_MA)*100/close[i];
       Dist_MABuffer[i] = distPriceFromMA*100/HV_MA;
-      ColorBuffer[i] = 1;
+      ColorBuffer[i] = (MathAbs(Dist_MABuffer[i])>50) ? 2 : (MathAbs(Dist_MABuffer[i])>30) ? 1 : 0;
      }
 //--- return value of prev_calculated for next call
    return(rates_total);
