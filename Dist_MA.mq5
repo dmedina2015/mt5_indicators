@@ -1,10 +1,10 @@
 //+------------------------------------------------------------------+
 //|                                                      Dist_MA.mq5 |
-//|                                  Copyright 2022, MetaQuotes Ltd. |
-//|                                             https://www.mql5.com |
+//|                                         Copyright 2022, innovaGP |
+//|                                       mailto:daniel.sm@gmail.com |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2022, MetaQuotes Ltd."
-#property link      "https://www.mql5.com"
+#property copyright "Copyright 2022, innovaGP"
+#property link      "mailto:daniel.sm@gmail.com"
 #property version   "1.00"
 #property indicator_separate_window
 #property indicator_buffers 3
@@ -18,15 +18,25 @@
 #property indicator_style1  STYLE_SOLID
 #property indicator_width1  2
 //--- set the maximum and minimum values ​​for the indicator window
-#property indicator_minimum  -55
-#property indicator_maximum  55
+#property indicator_minimum  -70
+#property indicator_maximum  75
 //--- plot Levels
 #property indicator_level1 30
 #property indicator_level2 -30
 #property indicator_level3 50
 #property indicator_level4 -50
+
 //--- input parameters
 input int      inpLen=21; // Length of HV and MA
+input int      inpAnnualize=252; // Days to annualize
+input bool inpUseLogReturn=false; // Calculate daily return using LN
+enum stdDevType  
+  { 
+   S=0,     // Sample 
+   P=1,     // Population 
+  }; 
+input stdDevType inpStdDevType=P; // Std Dev Calculation
+
 //--- indicator buffers
 double         HVBuffer[];
 double         Dist_MABuffer[],ColorBuffer[];
@@ -77,7 +87,7 @@ int OnCalculate(const int rates_total,
       double sum = 0;
       for(int k=0; k<inpLen && (i-k)>0; k++)
         {
-         work[k] = close[i-k]/close[i-k-1];
+         (inpUseLogReturn)?work[k] = MathLog(close[i-k]/close[i-k-1]):work[k] = (close[i-k]/close[i-k-1])-1;
          avg    += work[k];
         }
       avg/=inpLen;
@@ -86,9 +96,12 @@ int OnCalculate(const int rates_total,
       //
       //---
       //
-
-      HVBuffer[i] = MathSqrt(sum/(inpLen-1)); //Using "Sample" formula (n-1)
-      HVBuffer[i] *= MathSqrt(252)*100; //Annualize and convert to %
+      if(inpStdDevType) // Calculation is for Population
+         HVBuffer[i]  = MathSqrt(sum/inpLen); // use /(n) formula
+      else //Calculation is for Sample
+         HVBuffer[i]  = MathSqrt(sum/(inpLen-1)); // use /(n-1) formula
+         
+      HVBuffer[i] *= MathSqrt(inpAnnualize)*100; //Annualize and convert to %
       
       double HV_MA = SimpleMA(i,inpLen,HVBuffer);
       double Price_MA = SimpleMA(i,inpLen,close);
